@@ -2,19 +2,23 @@
 
 using namespace std;
 
-typedef struct Node
+typedef struct node
 {
 	int pos = -1;
     bool isVisited = false;//访问位遍历用
 	char ch = ' ';
 	double weigiht = 0;
 	bool Existed = true;//判断是否计算过
-	Node*LChild = NULL;
-	Node*RChild = NULL;
-	Node*Parent = NULL;
+	node*LChild = NULL;
+	node*RChild = NULL;
+	node*Parent = NULL;
 }Node;
+int str[50][21];
+int M,N;
 void Traverse(Node*);
 void Print(Node*, int);
+void Show(string &a);
+
 void Huffman()
 {
 	int charNum;
@@ -102,6 +106,7 @@ void Huffman()
 	//Traverse(&array[2 * charNum - 2]);
 	Print(array, charNum);
 }
+
 void Traverse(Node*node)//递归遍历二叉树
 {
 	cout << node->ch << ":" << node->weigiht << endl;
@@ -111,29 +116,56 @@ void Traverse(Node*node)//递归遍历二叉树
 	if (node->RChild != NULL && !node->RChild->isVisited)
         Traverse(node->RChild);
 }
+
 void Print(Node*array, int num)//打印字符及哈夫曼编码
 {
 	stack<int>path;
 	for (int i = 0;i < num;i++)
 	{
-		Node*p = &array[i];
+		M = 0;
+        Node*p = &array[i];
 		while (p->Parent)
 		{
 			path.push(p->pos);
 			p = p->Parent;
 		}
 		cout << "字符" << array[i].ch << "的哈夫曼编码是：";
+        str[N][M++] = (int)array[i].ch;
 		while (!path.empty())
 		{
 			cout << path.top();//取栈顶元素
+		    str[N][M++] = path.top();
 			path.pop();//删除栈顶元素
-		}
+        }
+        str[N++][M] = -1;
 		cout << endl;
 	}
 }
+
+void Show( string &a ) 
+{
+    for ( decltype(a.size()) i = 0; i < a.size(); ++i ) {
+        for ( int j = 0; j < N-1; ++j ) {
+            int m = 1;
+            if ( (a[i] - str[j][0] ) == 0 ) {
+                while ( str[j][m] != -1 ) {
+                    cout << str[j][m++] ;
+                }
+            }
+        }
+    }
+    cout << endl;
+}
+
 int main()
 {
-	Huffman();	
+	Huffman();
+    
+    string s;
+    cout << "请输入想要编码的字符串：" << endl;
+    cin >> s;
+    Show(s);
+
     return 0;
 }
  
