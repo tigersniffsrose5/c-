@@ -138,14 +138,14 @@ void Print(Node*array, int num)//打印字符及哈夫曼编码
 			path.pop();//删除栈顶元素
         }
         str[N++][M] = -1;
-		cout << endl;
+        cout << endl;
 	}
 }
 
 void Show( string &a ) 
 {
     for ( decltype(a.size()) i = 0; i < a.size(); ++i ) {
-        for ( int j = 0; j < N-1; ++j ) {
+        for ( int j = 0; j < N; ++j ) {
             int m = 1;
             if ( (a[i] - str[j][0] ) == 0 ) {
                 while ( str[j][m] != -1 ) {
@@ -160,7 +160,7 @@ void Show( string &a )
 int main()
 {
 	Huffman();
-    
+
     string s;
     cout << "请输入想要编码的字符串：" << endl;
     cin >> s;
