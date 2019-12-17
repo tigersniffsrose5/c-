@@ -8,18 +8,18 @@ typedef struct Node {
     struct Node *right = nullptr;
 }node;
 
-class BST {
+class bst {
 public:
-    BST(){ root = NULL; };
-    void Search(int item, bool &found, node *&pre, node *&p);
+    bst(){ root = NULL; };
+    void Search(int key, bool &found, node *&pre, node *&p);
     void Insert(int value);
-    void Delete(int item);
+    void Delete(int key);
     void Inorder(node *p) const;
 private:
     node *root;
 };
 
-void BST::Inorder (node *p) const 
+void bst::Inorder (node *p) const 
 {
     if ( p == nullptr )
         return;
@@ -29,18 +29,18 @@ void BST::Inorder (node *p) const
 
 }
 
-void BST::Search(int item, bool &found, node *&pre, node *&p)
+void bst::Search(int key, bool &found, node *&pre, node *&p)
 {
     while () {
         if ( found || p == NULL )
             break;
 
-        if ( item < p->data ) {
+        if ( key < p->data ) {
             pre = p;
             p = p->left;
         }
 
-        else if ( item > p->data ) {
+        else if ( key > p->data ) {
             pre = p;
             p = p->right;
         }
@@ -50,7 +50,7 @@ void BST::Search(int item, bool &found, node *&pre, node *&p)
     }
 }
 
-void BST::Insert(int value)
+void bst::Insert(int value)
 {
     bool found = false;
     node *p = root;
@@ -59,7 +59,7 @@ void BST::Insert(int value)
     Search(value, found, pre, p);
     
     if (found)
-        cout << "The value has been in the BST" << endl;
+        cout << "The value has been in the bst" << endl;
     else {
 
         node* n = new node;
@@ -78,16 +78,16 @@ void BST::Insert(int value)
     }
 }
 
-void BST::Delete(int item)
+void bst::Delete(int key)
 {
     bool found = false;
     node *p = root;
     node *pre = p;
     
-    Search(item, found, pre, p);
+    Search(key, found, pre, p);
     
     if ( !found )
-        cout << "The value is not in the BST" << endl;
+        cout << "The value is not in the bst" << endl;
     
     else {
         
