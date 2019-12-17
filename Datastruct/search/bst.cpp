@@ -14,9 +14,20 @@ public:
     void Search(int item, bool &found, node *&pre, node *&p);
     void Insert(int value);
     void Delete(int item);
+    void Inorder(node *p) const;
 private:
     node *root;
 };
+
+void BST::Inorder (node *p) const 
+{
+    if ( p == nullptr )
+        return;
+    Inorder(p->left);
+    cout << p->data << endl;
+    Inorder(p->right);
+
+}
 
 void BST::Search(int item, bool &found, node *&pre, node *&p)
 {
