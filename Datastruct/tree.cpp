@@ -212,13 +212,13 @@ int main()
 {
 	int a[len] = { 62, 88, 58, 47, 35, 73, 51, 99, 37, 93, 23, 27, 45, 21, 12 };
 
-	BiTree tree = NULL;
+    BiTree tree = NULL;
 	//创建一个二叉树，并中序遍历
 	CreateOrderBinaryTree(tree, a);
 
 	cout << "前序遍历" << endl;
 	ProOrderTraverse(tree);
-	cout << endl;
+    cout << endl;
 	ProOrder(tree);
 	cout << endl<<endl;
 

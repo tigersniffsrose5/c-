@@ -51,6 +51,7 @@ int main( )
    Line line(10);
    cout << "qsj" << endl; 
    display(line);
- 
+   cout << "qsj" << endl; 
+   
    return 0;
 }

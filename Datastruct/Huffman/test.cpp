@@ -4,15 +4,15 @@ using namespace std;
 
 template <typename T>
 struct great {
-	bool operator() ( const T &left, const T &right ) {
+    bool operator() ( const T &left, const T &right ) {
         return left > right;
-	}
+    }
 };
 
 int main ()
 {
     priority_queue<int, vector<int>, great<int>> a;
-    priority_queue<int, vector<int>, greater<int>> c;
+    priority_queue<int> c;
 
     for ( int i = 0; i < 5; ++i ) {
         a.push(i);
