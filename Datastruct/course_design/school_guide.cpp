@@ -43,6 +43,22 @@ int get_choice(string choice_t)
     return choice;
 }
 
+void mysql_init_t()
+{
+    
+    if (NULL == mysql_init(&mysql)) {
+        cout << "mysql_init():" << mysql_error(&mysql) << endl;
+        exit(-1);
+    }
+
+    if (!mysql_real_connect(&mysql, "localhost", "root", "qsj122833", "school_guide", 0, NULL, 0)) {
+        cout << "mysql_real_connect failure!" << endl;
+        exit(-1);
+    }
+
+    mysql_set_character_set(&mysql, "utf8");
+
+}
 
 class GraphMat
 {
@@ -52,21 +68,19 @@ public:
     void clean();
     void createGraph();                                 //构造一个图
     void display();                                     //打印地点名称
-    
-    void BFSTraverse();                                 //广度优先遍历
-    void BFSTraverse_queue();
-    void DFSTraverse();                                 //深度优先遍历
-    void DFSTraverse_norecursive();                     //深搜非递归
+    void bfs();                                         //广度优先遍历
+    void dfs(int strat, int end, deque <int> &q);       //深度优先遍历
+    void search_simple();                               //简单路径
 
 private:
 
     int vex_num;                                        //图的顶点个数
     int arc_num;                                        //图的边个数
+    int vex_max;                                        //最大顶点序号
+    int vex_min;
     int arcs[MAX_VERTEX_NUM][MAX_VERTEX_NUM];           //邻接矩阵
     place_info vexs[MAX_VERTEX_NUM];                    //顶点集合
     bool is_trav[MAX_VERTEX_NUM];                       //遍历标志，0为未遍历，1为已遍历
-    void BFSFunction(int);                              //广度优先
-    void DFSFunction(int);                              //深度优先
 
 };
 
@@ -95,7 +109,9 @@ void GraphMat::createGraph()
     int i = 1;
     int j = 0;
     int k = 0;
-        
+    vex_max = 0;
+    vex_min = 99999;
+
     if ( mysql_real_query(&mysql, "select * from place_info", (unsigned long)strlen("select * from place_info")) ) {
         cout << "mysql_real_query select failure!" << endl;
         exit(0);
@@ -114,6 +130,10 @@ void GraphMat::createGraph()
         vexs[i].line = atoi(row[2]);
         vexs[i].row = atoi(row[3]);
         vexs[i++].place_message = row[4];
+        if ( vex_max < atoi(row[0]) )
+            vex_max = atoi(row[0]);
+        if ( vex_min > atoi(row[0]) )
+            vex_min = atoi(row[0]);
     }
 
     i--;  
@@ -146,23 +166,6 @@ void GraphMat::createGraph()
     arc_num = i;
 
     mysql_free_result(res);
-
-}
-
-void mysql_init_t()
-{
-    
-    if (NULL == mysql_init(&mysql)) {
-        cout << "mysql_init():" << mysql_error(&mysql) << endl;
-        exit(-1);
-    }
-
-    if (!mysql_real_connect(&mysql, "localhost", "root", "qsj122833", "school_guide", 0, NULL, 0)) {
-        cout << "mysql_real_connect failure!" << endl;
-        exit(-1);
-    }
-
-    mysql_set_character_set(&mysql, "utf8");
 
 }
 
@@ -232,6 +235,34 @@ void GraphMat::display()
 
 }
 
+void GraphMat::dfs( int start, int end, deque <int> &q )
+{
+    for ( int i = 1; i <= vex_num; ++i ) {
+        int j = vexs[i].number;
+        if ( arcs[start][j] != -1 && is_trav[j] == 0 ) {
+            
+            is_trav[j] = 1;
+            
+            if ( j == end ) {
+                cout << "\n\t\t\t\t";
+                while ( !q.empty() ) {
+                    cout << q.front() << "----->";
+                    q.pop_front();
+                }
+                cout << j << "\n";
+            }
+
+            else {
+                q.push_back(j);
+                dfs(j, end, q);
+                q.pop_back();
+                is_trav[j] = 0;
+            }
+        }
+    }
+
+}
+
 void GraphMat::search_simple()
 {
     
@@ -239,7 +270,8 @@ void GraphMat::search_simple()
     int choice1;
     string choice_t2;
     int choice2;
- 
+    deque <int> a;
+
     cout << "\t\t\t\t|================================================|\n";
     cout << "\t\t\t\t|*                                              *|\n";
     cout << "\t\t\t\t|*    ***欢迎使用西安邮电大学长安校区导航***    *|\n";
@@ -263,7 +295,15 @@ void GraphMat::search_simple()
     cout << "\t\t\t\t请输入终点序号:";
     cin >> choice_t2;
     choice2 = get_choice(choice_t2);
+    cout << "\n\t\t\t\t两地点间的所有路线情况为:\n\n";
 
+    a.push_back(choice1);
+    is_trav[choice1] = 1;
+    dfs(choice1, choice2, a);
+
+    cout << "\n\t\t\t\t按任意键返回...";
+    getchar();
+    getchar();
 
 }
 
@@ -345,7 +385,10 @@ int main ()
             map.display();
             break;
         case 4:
-
+            map.clean();
+            map.createGraph();
+            map.search_simple();
+            break;
         }
 
     }while (choice != 0);
