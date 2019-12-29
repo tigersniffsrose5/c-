@@ -9,7 +9,7 @@ using namespace std;
 //清除屏幕 
 #define CLEAR() printf("\033[2J") 
 //图的最大顶点数
-#define MAX_VERTEX_NUM  88 
+#define MAX_VERTEX_NUM  50 
 
 typedef struct {
     int number;
@@ -20,16 +20,39 @@ typedef struct {
 }place_info; 
 
 MYSQL mysql;
-place_info num[MAX_VERTEX_NUM];
+
+int get_choice(string choice_t)
+{
+    int choice = 0;
+
+    for( decltype(choice_t.size()) i = 0; i < choice_t.size(); ++i )
+        if( choice_t[i] < '0' || choice_t[i] > '9' )
+            return -1;
+    
+    for( decltype(choice_t.size()) i = 0; i < choice_t.size(); ++i ) {
+        
+        int t = 1;
+        
+        for( decltype(choice_t.size()) j = 1; j < choice_t.size() - i; ++j ) {
+            t*=10;
+        }
+
+        choice += t*(int)(choice_t[i] - 48);
+    }
+
+    return choice;
+}
+
 
 class GraphMat
 {
 
 public:
 
-    GraphMat();
-    void CreateGraph();                                 //构造一个图
-    void print();                                       //打印地点名称
+    void clean();
+    void createGraph();                                 //构造一个图
+    void display();                                     //打印地点名称
+    
     void BFSTraverse();                                 //广度优先遍历
     void BFSTraverse_queue();
     void DFSTraverse();                                 //深度优先遍历
@@ -47,7 +70,7 @@ private:
 
 };
 
-GraphMat::GraphMat(void) 
+void GraphMat::clean() 
 {
     
     vex_num = 0;
@@ -64,8 +87,9 @@ GraphMat::GraphMat(void)
 
 }
 
-void GraphMat::CreateGraph()
+void GraphMat::createGraph()
 {
+    
     MYSQL_RES *res;
     MYSQL_ROW row;
     int i = 1;
@@ -91,6 +115,10 @@ void GraphMat::CreateGraph()
         vexs[i].row = atoi(row[3]);
         vexs[i++].place_message = row[4];
     }
+
+    i--;  
+    vex_num = i;
+
     mysql_free_result(res);
 
     if ( mysql_real_query(&mysql, "select * from route_info", (unsigned long)strlen("select * from route_info")) ) {
@@ -105,18 +133,25 @@ void GraphMat::CreateGraph()
         exit(0);
     }
     
+    i = 1;
     while ( (row = mysql_fetch_row(res)) ) {
         j = atoi(row[0]);
         k = atoi(row[1]);
         arcs[j][k] = atoi(row[2]);
         arcs[k][j] = atoi(row[2]);
+        i++;
     }
+
+    i--;
+    arc_num = i;
+
     mysql_free_result(res);
 
 }
 
 void mysql_init_t()
 {
+    
     if (NULL == mysql_init(&mysql)) {
         cout << "mysql_init():" << mysql_error(&mysql) << endl;
         exit(-1);
@@ -128,6 +163,107 @@ void mysql_init_t()
     }
 
     mysql_set_character_set(&mysql, "utf8");
+
+}
+
+void GraphMat::display()
+{
+    string choice_t;
+    int choice;
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+ 
+    while (1) {
+
+        cout << "\t\t\t\t|================================================|\n";
+        cout << "\t\t\t\t|*                                              *|\n";
+        cout << "\t\t\t\t|*    ***欢迎使用西安邮电大学长安校区导航***    *|\n";
+        cout << "\t\t\t\t|*                                              *|\n";
+        cout << "\t\t\t\t|================================================|\n\n\n";
+
+        cout.setf(std::ios::left);  //设置输出左对齐
+        cout << "\t\t\t\t";
+        for ( int i = 1; i <= vex_num; ++i ) {
+            cout <<  vexs[i].number << '.';
+            cout.width(15);
+            cout << vexs[i].place_name;
+            if ( i%5 == 0 )
+                cout << "\n\t\t\t\t";
+        }
+        cout << "\n\n" << endl;
+
+        cout << "\t\t\t\t请输入想要查询的地点（输入0返回菜单）：";
+        cin >> choice_t;
+        choice = get_choice(choice_t);
+
+        if ( choice == 0 )
+            break;
+
+        cout << "\t\t\t\t该点信息如下：\n\t\t\t\t\n\t\t\t\t";
+        cout << vexs[choice].place_name << ":\n\t\t\t\t" << vexs[choice].place_message << endl;
+        cout << "\n\t\t\t\t该点的路线情况如下：\n\t\t\t\t";
+        
+        if ( mysql_real_query(&mysql, "select * from route_info", (unsigned long)strlen("select * from route_info")) ) {
+            cout << "mysql_real_query select failure!" << endl;
+            exit(0);
+        }
+
+        res = mysql_store_result(&mysql);
+
+        if ( NULL == res ) {
+            cout << "mysql_store_result failure!" << endl;
+            exit(0);
+        }
+
+        while ( (row = mysql_fetch_row(res)) ) {
+        
+            if ( vexs[choice].number == atoi(row[0]) ) 
+                cout << row[0] << "   <---->   " << row[1] << ": " << row[2] << "m\n\t\t\t\t";
+            else if ( vexs[choice].number == atoi(row[1]) ) 
+                cout << row[1] << "   <---->   " << row[0] << ": " << row[2] << "m\n\t\t\t\t";
+   
+        }
+
+        cout << "\n\t\t\t\t按任意键返回...";
+        getchar();
+        getchar();
+
+    }
+
+}
+
+void GraphMat::search_simple()
+{
+    
+    string choice_t1;
+    int choice1;
+    string choice_t2;
+    int choice2;
+ 
+    cout << "\t\t\t\t|================================================|\n";
+    cout << "\t\t\t\t|*                                              *|\n";
+    cout << "\t\t\t\t|*    ***欢迎使用西安邮电大学长安校区导航***    *|\n";
+    cout << "\t\t\t\t|*                                              *|\n";
+    cout << "\t\t\t\t|================================================|\n\n\n";
+
+    cout.setf(std::ios::left);  //设置输出左对齐
+    cout << "\t\t\t\t";
+    for ( int i = 1; i <= vex_num; ++i ) {
+        cout <<  vexs[i].number << '.';
+        cout.width(15);
+        cout << vexs[i].place_name;
+        if ( i%5 == 0 )
+            cout << "\n\t\t\t\t";
+    }
+    cout << "\n\n" << endl;
+    
+    cout << "\t\t\t\t请输入起点序号:";
+    cin >> choice_t1;
+    choice1 = get_choice(choice_t1);
+    cout << "\t\t\t\t请输入终点序号:";
+    cin >> choice_t2;
+    choice2 = get_choice(choice_t2);
+
 
 }
 
@@ -155,12 +291,64 @@ void show()
     cout << "\t\t\t\t|*                                              *|\n";
     cout << "\t\t\t\t|*==============================================*|\n";
     cout << "\n\n";
-    cout << "\n\t\t\t\t\t\t按任意键返回...";
+    cout << "\n\t\t\t\t按任意键返回...";
     getchar();
+    getchar();
+
+}
+
+void work()
+{
+       cout << "\n\n";
+	   cout << "\t\t\t\t|================================================|\n";
+	   cout << "\t\t\t\t|*                                              *|\n";
+	   cout << "\t\t\t\t|*    ***欢迎使用西安邮电大学长安校区导航***    *|\n";
+	   cout << "\t\t\t\t|*                                              *|\n";
+	   cout << "\t\t\t\t|*----------------------------------------------*|\n";
+	   cout << "\t\t\t\t|*                                              *|\n";
+	   cout << "\t\t\t\t|*               0. 退出                        *|\n";
+	   cout << "\t\t\t\t|*               1. 导航使用说明                *|\n";
+	   cout << "\t\t\t\t|*               2. 校园平面简图                *|\n";
+	   cout << "\t\t\t\t|*               3. 查看地点信息                *|\n";
+       cout << "\t\t\t\t|*               4. 查询简单路线                *|\n";
+	   cout << "\t\t\t\t|*               5. 查询最短路线                *|\n";
+	   cout << "\t\t\t\t|*               6. 查询最优路线                *|\n";
+	   cout << "\t\t\t\t|*               7. 最佳布网方案                *|\n";
+	   cout << "\t\t\t\t|*               8. 添加新地点                  *|\n";
+	   cout << "\t\t\t\t|*               9. 添加新路线                  *|\n";
+	   cout << "\t\t\t\t|*               10.撤销旧路线                  *|\n";
+	   cout << "\t\t\t\t|*                                              *|\n";
+	   cout << "\t\t\t\t|*==============================================*|\n";
 }
 
 int main ()
 {
-    show();
+    string choice_t;
+    int choice;
+    GraphMat map;
+
+    mysql_init_t();
+
+    do {
+        work();
+        cout << "\n\n\t\t\t\t请输入你的操作：";
+        cin >> choice_t;
+        choice = get_choice(choice_t);
+
+        switch(choice) {
+        case 1:
+            show();
+            break;
+        case 3:
+            map.clean();
+            map.createGraph();
+            map.display();
+            break;
+        case 4:
+
+        }
+
+    }while (choice != 0);
+   
     return 0;
 }
