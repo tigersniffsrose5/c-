@@ -79,6 +79,10 @@ public:
     void getpath(vector <int> &pre, int start, int end);
     void prim(int start);
     void less_tree();
+    void add_place();
+    void add_route();
+    void delete_place();
+    void delete_route();
 
 private:
 
@@ -99,14 +103,15 @@ void GraphMat::clean1()
     arc_num = 0;
 
     //清空矩阵
-    for ( int i = 0; i < MAX_VERTEX_NUM; ++i )
-        for ( int j = 0; j < MAX_VERTEX_NUM; ++j )
+    for ( int i = 1; i <= MAX_VERTEX_NUM; ++i )
+        for ( int j = 1; j <= MAX_VERTEX_NUM; ++j )
             arcs[i][j] = -1;                           //设置矩阵中各元素的值为-1  
     
     //清空遍历标志
-    for ( int i = 0; i < MAX_VERTEX_NUM; ++i )
+    for ( int i = 1; i <= MAX_VERTEX_NUM; ++i )
         is_trav[i] = 0;
 
+    memset(vexs, 0, sizeof(place_info)*MAX_VERTEX_NUM);
 }
 
 void GraphMat::clean2() 
@@ -116,14 +121,15 @@ void GraphMat::clean2()
     arc_num = 0;
 
     //清空矩阵
-    for ( int i = 0; i < MAX_VERTEX_NUM; ++i )
-        for ( int j = 0; j < MAX_VERTEX_NUM; ++j )
+    for ( int i = 1; i <= MAX_VERTEX_NUM; ++i )
+        for ( int j = 1; j < MAX_VERTEX_NUM; ++j )
             arcs[i][j] = 999999;                           //设置矩阵中各元素的值为999999  
     
     //清空遍历标志
-    for ( int i = 0; i < MAX_VERTEX_NUM; ++i )
+    for ( int i = 1; i <= MAX_VERTEX_NUM; ++i )
         is_trav[i] = 0;
 
+    memset(vexs, 0, sizeof(place_info)*MAX_VERTEX_NUM);
 }
 
 
@@ -135,6 +141,7 @@ void GraphMat::createGraph()
     int i = 1;
     int j = 0;
     int k = 0;
+    int num;
     vex_max = 0;
     vex_min = 99999;
 
@@ -151,11 +158,13 @@ void GraphMat::createGraph()
     }
 
     while ( (row = mysql_fetch_row(res)) ) {
-        vexs[i].number = atoi(row[0]);
-        vexs[i].place_name = row[1];
-        vexs[i].line = atoi(row[2]);
-        vexs[i].row = atoi(row[3]);
-        vexs[i++].place_message = row[4];
+        num = atoi(row[0]);
+        vexs[num].number = atoi(row[0]);
+        vexs[num].place_name = row[1];
+        vexs[num].line = atoi(row[2]);
+        vexs[num].row = atoi(row[3]);
+        vexs[num].place_message = row[4];
+        i++;
         if ( vex_max < atoi(row[0]) )
             vex_max = atoi(row[0]);
         if ( vex_min > atoi(row[0]) )
@@ -212,12 +221,14 @@ void GraphMat::display()
 
         cout.setf(std::ios::left);  //设置输出左对齐
         cout << "\t\t\t\t";
-        for ( int i = 1; i <= vex_num; ++i ) {
+        for ( int i = 1; i <= vex_max; ++i ) {
+            if ( vexs[i].number != 0 ) {
             cout <<  vexs[i].number << '.';
             cout.width(15);
             cout << vexs[i].place_name;
             if ( i%5 == 0 )
                 cout << "\n\t\t\t\t";
+            }
         }
         cout << "\n\n" << endl;
 
@@ -266,7 +277,10 @@ void GraphMat::display()
 
 void GraphMat::dfs( int start, int end, deque <int> &q )
 {
-    for ( int i = 1; i <= vex_num; ++i ) {
+    for ( int i = 1; i <= vex_max; ++i ) {
+        if ( vexs[i].number == 0 )
+            continue;
+
         int j = vexs[i].number;
         if ( arcs[start][j] != -1 && is_trav[j] == 0 ) {
             
@@ -311,15 +325,17 @@ void GraphMat::search_simple()
 
     cout.setf(std::ios::left);  //设置输出左对齐
     cout << "\t\t\t\t";
-    for ( int i = 1; i <= vex_num; ++i ) {
-        cout <<  vexs[i].number << '.';
-        cout.width(15);
-        cout << vexs[i].place_name;
-        if ( i%5 == 0 )
-            cout << "\n\t\t\t\t";
+    for ( int i = 1; i <= vex_max; ++i ) {
+        if ( vexs[i].number != 0 ) {
+            cout <<  vexs[i].number << '.';
+            cout.width(15);
+            cout << vexs[i].place_name;
+            if ( i%5 == 0 )
+                cout << "\n\t\t\t\t";
+        }
     }
     cout << "\n\n" << endl;
-    
+
     cout << "\t\t\t\t请输入起点序号:";
     cin >> choice_t1;
     choice1 = get_choice(choice_t1);
@@ -343,6 +359,8 @@ void GraphMat::bfs( int start, int end )
     
     queue <int> q;
 
+    memset(is_trav, 0, MAX_VERTEX_NUM);
+    
     if ( start == end ) {
         cout << start;
         return ;
@@ -357,8 +375,9 @@ void GraphMat::bfs( int start, int end )
         value = q.front();
         q.pop();
 
-        for ( int i = 1; i <= vex_num; ++i ) {
-            
+        for ( int i = 1; i <= vex_max; ++i ) {
+            if ( vexs[i].number == 0 )
+                continue;
             int j = vexs[i].number;
             
             if ( arcs[value][j] != -1 && is_trav[j] == 0 ) {
@@ -394,13 +413,16 @@ void GraphMat::search_less()
 
     cout.setf(std::ios::left);  //设置输出左对齐
     cout << "\t\t\t\t";
-    for ( int i = 1; i <= vex_num; ++i ) {
-        cout <<  vexs[i].number << '.';
-        cout.width(15);
-        cout << vexs[i].place_name;
-        if ( i%5 == 0 )
-            cout << "\n\t\t\t\t";
+    for ( int i = 1; i <= vex_max; ++i ) {
+        if ( vexs[i].number != 0 ) {
+            cout <<  vexs[i].number << '.';
+            cout.width(15);
+            cout << vexs[i].place_name;
+            if ( i%5 == 0 )
+                cout << "\n\t\t\t\t";
+        }
     }
+ 
     cout << "\n\n" << endl;
     
     cout << "\t\t\t\t请输入起点序号:";
@@ -424,7 +446,9 @@ void GraphMat::dijkstra(int start, vector <int> &dist, vector <int> &pre)
 {
     vector <bool> s(vex_num);
     
-    for ( int i = 1; i <= vex_num; ++i ) {
+    for ( int i = 1; i <= vex_max; ++i ) {
+        if ( vexs[i].number == 0 )
+            continue;
         int j = vexs[i].number;
         if ( arcs[start][j] == -1 )
             dist[j] = 999999;
@@ -440,7 +464,9 @@ void GraphMat::dijkstra(int start, vector <int> &dist, vector <int> &pre)
     for ( int i = 2; i <= vex_num; ++i ) {
         int best = start;
         int temp = 999999;
-        for ( int j = 1; j <= vex_num; ++j) {
+        for ( int j = 1; j <= vex_max; ++j) {
+            if ( vexs[j].number == 0 )
+                continue;
             int k = vexs[j].number;
             if ( !s[k] && dist[k] < temp ) {
                 temp = dist[k];
@@ -450,7 +476,9 @@ void GraphMat::dijkstra(int start, vector <int> &dist, vector <int> &pre)
 
         s[best] = true;
         
-        for ( int j = 1; j <= vex_num; ++j) {
+        for ( int j = 1; j <= vex_max; ++j) {
+            if ( vexs[j].number == 0 )
+                continue;
             int k = vexs[j].number;
             if ( !s[k] && arcs[best][k] != -1 ) {
                 int newdist = dist[best] + arcs[best][k];
@@ -495,7 +523,7 @@ void GraphMat::search_best()
     int choice1;
     string choice_t2;
     int choice2;
-    vector <int> dist(vex_num), pre(vex_num);
+    vector <int> dist(vex_max), pre(vex_max);
 
     cout << "\t\t\t\t|================================================|\n";
     cout << "\t\t\t\t|*                                              *|\n";
@@ -505,13 +533,16 @@ void GraphMat::search_best()
 
     cout.setf(std::ios::left);  //设置输出左对齐
     cout << "\t\t\t\t";
-    for ( int i = 1; i <= vex_num; ++i ) {
-        cout <<  vexs[i].number << '.';
-        cout.width(15);
-        cout << vexs[i].place_name;
-        if ( i%5 == 0 )
-            cout << "\n\t\t\t\t";
+    for ( int i = 1; i <= vex_max; ++i ) {
+        if ( vexs[i].number != 0 ) {
+            cout <<  vexs[i].number << '.';
+            cout.width(15);
+            cout << vexs[i].place_name;
+            if ( i%5 == 0 )
+                cout << "\n\t\t\t\t";
+        }
     }
+ 
     cout << "\n\n" << endl;
     
     cout << "\t\t\t\t请输入起点序号:";
@@ -521,7 +552,7 @@ void GraphMat::search_best()
     cin >> choice_t2;
     choice2 = get_choice(choice_t2);
 
-    for ( int i = 1; i <= vex_num ; ++i)
+    for ( int i = 1; i <= vex_max ; ++i)
         dist[i] = max_dist;
     
     dijkstra(choice1, dist, pre); 
@@ -541,11 +572,13 @@ void GraphMat::prim(int start)
         int adjvex;
         int lowcost;
     }closedge[MAX_VERTEX_NUM];
-    int m;
+    int i, e, m, MIN;
 
     closedge[start].lowcost = 0;
 
-    for ( int i = 1; i <= vex_num; ++i ) {
+    for ( i = 1; i <= vex_max; ++i ) {
+        if ( vexs[i].number == 0 )
+            continue;
         int j = vexs[i].number;
         if ( j != start ) {
             closedge[j].adjvex = start;
@@ -553,22 +586,29 @@ void GraphMat::prim(int start)
         }
     }
 
-    for ( int i = 1; i <= vex_num-1; ++i ) {
+    for ( e = 1; e <= vex_num-1; ++e ) {
         
-        int MIN = 999999;
-        for ( int j = 1; j <= vex_num; ++j ) {
-            int k = vexs[j].number;
-            if( closedge[k].lowcost != 0 && closedge[k].lowcost < MIN ) {
-                m = k;
-                MIN = closedge[k].lowcost;
+        MIN = 999999;
+        for ( int j = 1; j <= vex_max; ++j ) {
+            if ( vexs[j].number == 0 )
+                continue;
+            int n = vexs[j].number;
+            if( closedge[n].lowcost != 0 && closedge[n].lowcost < MIN ) {
+                m = n;
+                MIN = closedge[m].lowcost;
             }
         }
+
+        if ( closedge[m].lowcost == 0 )
+            continue;
 
         cout << "\t\t\t\t" << vexs[closedge[m].adjvex].number  << " <-----> " << vexs[m].number << ": " << closedge[m].lowcost  << 'm' << endl;
         
         closedge[m].lowcost = 0;
 
-        for( int n = 1; n <= vex_num; ++n ) {
+        for( int n = 1; n <= vex_max; ++n ) {
+            if ( vexs[n].number == 0 )
+                continue;
             int j = vexs[n].number;
             if( j != m && arcs[m][j] < closedge[j].lowcost ) {
                 closedge[j].lowcost = arcs[m][j];
@@ -599,20 +639,25 @@ void GraphMat::less_tree()
 
     cout.setf(std::ios::left);  //设置输出左对齐
     cout << "\t\t\t\t";
-    for ( int i = 1; i <= vex_num; ++i ) {
-        cout <<  vexs[i].number << '.';
-        cout.width(15);
-        cout << vexs[i].place_name;
-        if ( i%5 == 0 )
-            cout << "\n\t\t\t\t";
+    for ( int i = 1; i <= vex_max; ++i ) {
+        if ( vexs[i].number != 0 ) {
+            cout <<  vexs[i].number << '.';
+            cout.width(15);
+            cout << vexs[i].place_name;
+            if ( i%5 == 0 )
+                cout << "\n\t\t\t\t";
+        }
     }
+ 
     cout << "\n\n" << endl;
     
     cout << "\t\t\t\t请输入起点序号:";
     cin >> start_t;
     start = get_choice(start_t);
 
-    for ( int i = 1; i <= vex_num; ++i ) {
+    for ( int i = 1; i <= vex_max; ++i ) {
+        if ( vexs[i].number == 0 )
+            continue;
         int j = vexs[i].number;
         if ( arcs[start][j] != -1 )
             cnt++;
@@ -630,6 +675,206 @@ void GraphMat::less_tree()
     }
 
 }
+void GraphMat::add_place()
+{
+    char place[256];
+    int num;
+    char message[256];
+    int flag;
+
+    cout << "\t\t\t\t|================================================|\n";
+    cout << "\t\t\t\t|*                                              *|\n";
+    cout << "\t\t\t\t|*    ***欢迎使用西安邮电大学长安校区导航***    *|\n";
+    cout << "\t\t\t\t|*                                              *|\n";
+    cout << "\t\t\t\t|================================================|\n\n\n";
+
+    cout.setf(std::ios::left);  //设置输出左对齐
+    cout << "\t\t\t\t";
+    for ( int i = 1; i <= vex_max; ++i ) {
+        if ( vexs[i].number != 0 ) {
+            cout <<  vexs[i].number << '.';
+            cout.width(15);
+            cout << vexs[i].place_name;
+            if ( i%5 == 0 )
+                cout << "\n\t\t\t\t";
+        }
+    }
+ 
+    cout << "\n\n" << endl;
+    
+    cout << "\t\t\t\t请输入要添加的地点名称:";
+    cin >> place;
+    cout << "\t\t\t\t请输入要添加的地点介绍:";
+    cin >> message;
+
+    for ( int i = 1; i <= MAX_VERTEX_NUM; ++i ) {
+        flag = 0;
+        
+        for ( int j = 1; j <= vex_num; ++j ) {
+            int k = vexs[j].number;
+            if ( i == k ) {
+                flag = 1;
+                break;
+            }
+        }
+        
+        if ( flag == 0 ) {
+            num = i;
+            break;
+        }
+    
+    }
+
+    char n[10];
+    stringstream ss;
+    ss << num;
+    ss >> n;
+
+    char s[256];
+    sprintf(s,"insert into place_info values ('%s','%s','1','1','%s')", n, place, message);
+
+    if ( mysql_real_query(&mysql,s,strlen(s)) ) {
+        cout << "mysql_real_query insert failure!\n";
+        exit(0);
+    }
+    
+    cout << "\n\t\t\t\t添加成功按任意键返回...";
+    getchar();
+    getchar();
+
+
+}
+
+void GraphMat::add_route()
+{
+    char place1[256];
+    char place2[256];
+    char dstance[10];
+
+    cout << "\t\t\t\t|================================================|\n";
+    cout << "\t\t\t\t|*                                              *|\n";
+    cout << "\t\t\t\t|*    ***欢迎使用西安邮电大学长安校区导航***    *|\n";
+    cout << "\t\t\t\t|*                                              *|\n";
+    cout << "\t\t\t\t|================================================|\n\n\n";
+
+    cout.setf(std::ios::left);  //设置输出左对齐
+    cout << "\t\t\t\t";
+    for ( int i = 1; i <= vex_max; ++i ) {
+        if ( vexs[i].number != 0 ) {
+            cout <<  vexs[i].number << '.';
+            cout.width(15);
+            cout << vexs[i].place_name;
+            if ( i%5 == 0 )
+                cout << "\n\t\t\t\t";
+        }
+    }
+ 
+    cout << "\n\n" << endl;
+    
+    cout << "\t\t\t\t请输入要添加路线的地点序号1:";
+    cin >> place1;
+    cout << "\t\t\t\t请输入要添加路线的地点序号2:";
+    cin >> place2;
+    cout << "\t\t\t\t请输入要添加的路线距离:";
+    cin >> dstance;
+
+    char s[256];
+    sprintf(s,"insert into route_info values ('%s','%s','%s')", place1, place2, dstance);
+
+    if ( mysql_real_query(&mysql,s,strlen(s)) ) {
+        cout << "mysql_real_query insert failure!\n";
+        exit(0);
+    }
+    
+    cout << "\n\t\t\t\t添加成功按任意键返回...";
+    getchar();
+    getchar();
+
+}
+
+void GraphMat::delete_place()
+{
+    char place1[256];
+
+    cout << "\t\t\t\t|================================================|\n";
+    cout << "\t\t\t\t|*                                              *|\n";
+    cout << "\t\t\t\t|*    ***欢迎使用西安邮电大学长安校区导航***    *|\n";
+    cout << "\t\t\t\t|*                                              *|\n";
+    cout << "\t\t\t\t|================================================|\n\n\n";
+
+    cout.setf(std::ios::left);  //设置输出左对齐
+    cout << "\t\t\t\t";
+    for ( int i = 1; i <= vex_max; ++i ) {
+        if ( vexs[i].number != 0 ) {
+            cout <<  vexs[i].number << '.';
+            cout.width(15);
+            cout << vexs[i].place_name;
+            if ( i%5 == 0 )
+                cout << "\n\t\t\t\t";
+        }
+    }
+    cout << "\n\n" << endl;
+    
+    cout << "\t\t\t\t请输入要删除的地点名称:";
+    cin >> place1;
+
+    char s[256];
+    sprintf(s,"delete from place_info where number = '%s'", place1);
+
+    if ( mysql_real_query(&mysql,s,strlen(s)) ) {
+        cout << "mysql_real_query insert failure!\n";
+        exit(0);
+    }
+    
+    cout << "\n\t\t\t\t删除成功按任意键返回...";
+    getchar();
+    getchar();
+
+
+}
+
+void GraphMat::delete_route()
+{
+    char place1[256];
+    char place2[256];
+
+    cout << "\t\t\t\t|================================================|\n";
+    cout << "\t\t\t\t|*                                              *|\n";
+    cout << "\t\t\t\t|*    ***欢迎使用西安邮电大学长安校区导航***    *|\n";
+    cout << "\t\t\t\t|*                                              *|\n";
+    cout << "\t\t\t\t|================================================|\n\n\n";
+
+    cout.setf(std::ios::left);  //设置输出左对齐
+    cout << "\t\t\t\t";
+    for ( int i = 1; i <= vex_max; ++i ) {
+        if ( vexs[i].number != 0 ) {
+            cout <<  vexs[i].number << '.';
+            cout.width(15);
+            cout << vexs[i].place_name;
+            if ( i%5 == 0 )
+                cout << "\n\t\t\t\t";
+        }
+    }
+    cout << "\n\n" << endl;
+    
+    cout << "\t\t\t\t请输入要删除路线的地点序号1:";
+    cin >> place1;
+    cout << "\t\t\t\t请输入要删除路线的地点序号2:";
+    cin >> place2;
+
+    char s[256];
+    sprintf(s,"delete from route_info where place_1 = '%s' and place_2 = '%s'", place1, place2);
+    mysql_real_query(&mysql,s,strlen(s));
+    sprintf(s,"delete from route_info where place_2 = '%s' and place_1 = '%s'", place1, place2);
+    mysql_real_query(&mysql,s,strlen(s));
+    
+    cout << "\n\t\t\t\t删除成功按任意键返回...";
+    getchar();
+    getchar();
+
+
+}
+
 
 void show()
 {
@@ -672,14 +917,14 @@ void work()
 	   cout << "\t\t\t\t|*                                              *|\n";
 	   cout << "\t\t\t\t|*               0. 退出                        *|\n";
 	   cout << "\t\t\t\t|*               1. 导航使用说明                *|\n";
-	   cout << "\t\t\t\t|*               2. 校园平面简图                *|\n";
-	   cout << "\t\t\t\t|*               3. 查看地点信息                *|\n";
-       cout << "\t\t\t\t|*               4. 查询简单路线                *|\n";
-	   cout << "\t\t\t\t|*               5. 查询最短路线                *|\n";
-	   cout << "\t\t\t\t|*               6. 查询最优路线                *|\n";
-	   cout << "\t\t\t\t|*               7. 最佳布网方案                *|\n";
-	   cout << "\t\t\t\t|*               8. 添加新地点                  *|\n";
-	   cout << "\t\t\t\t|*               9. 添加新路线                  *|\n";
+	   cout << "\t\t\t\t|*               2. 查看地点信息                *|\n";
+       cout << "\t\t\t\t|*               3. 查询简单路线                *|\n";
+	   cout << "\t\t\t\t|*               4. 查询最短路线                *|\n";
+	   cout << "\t\t\t\t|*               5. 查询最优路线                *|\n";
+	   cout << "\t\t\t\t|*               6. 最佳布网方案                *|\n";
+	   cout << "\t\t\t\t|*               7. 添加新地点                  *|\n";
+	   cout << "\t\t\t\t|*               8. 添加新路线                  *|\n";
+       cout << "\t\t\t\t|*               9. 撤销旧地点                  *|\n";
 	   cout << "\t\t\t\t|*               10.撤销旧路线                  *|\n";
 	   cout << "\t\t\t\t|*                                              *|\n";
 	   cout << "\t\t\t\t|*==============================================*|\n";
@@ -703,34 +948,52 @@ int main ()
         case 1:
             show();
             break;
-        case 3:
+        case 2:
             map.clean1();
             map.createGraph();
             map.display();
             break;
-        case 4:
+        case 3:
             map.clean1();
             map.createGraph();
             map.search_simple();
             break;
-        case 5:
+        case 4:
             map.clean1();
             map.createGraph();
             map.search_less();
             break;
-        case 6:
+        case 5:
             map.clean1();
             map.createGraph();
             map.search_best();
             break;
-        case 7:
+        case 6:
             map.clean2();
             map.createGraph();
             map.less_tree();
             break;
+        case 7:
+            map.clean1();
+            map.createGraph();
+            map.add_place();
+            break;
+        case 8:
+            map.clean1();
+            map.createGraph();
+            map.add_route();
+            break;
+        case 9:
+            map.clean1();
+            map.createGraph();
+            map.delete_place();
+            break;
+        case 10:
+            map.clean1();
+            map.createGraph();
+            map.delete_route();
+            break;
         }
-
-
     }while (choice != 0);
    
     return 0;
