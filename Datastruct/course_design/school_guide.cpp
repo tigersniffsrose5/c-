@@ -9,7 +9,7 @@ using namespace std;
 //清除屏幕 
 #define CLEAR() printf("\033[2J") 
 //图的最大顶点数
-#define MAX_VERTEX_NUM  50 
+#define MAX_VERTEX_NUM  33 
 #define max_dist 999999
 
 typedef struct {
@@ -576,6 +576,14 @@ void GraphMat::prim(int start)
 
     closedge[start].lowcost = 0;
 
+    if ( vexs[start].number == 0 ) {
+        cout << "\t\t\t\t没有这个地点！";
+        cout << "\n\n\t\t\t\t按任意键返回...";
+        getchar();
+        getchar();
+        return;
+    }
+
     for ( i = 1; i <= vex_max; ++i ) {
         if ( vexs[i].number == 0 )
             continue;
@@ -681,6 +689,8 @@ void GraphMat::add_place()
     int num;
     char message[256];
     int flag;
+    MYSQL_RES *res;   
+    MYSQL_ROW row;
 
     cout << "\t\t\t\t|================================================|\n";
     cout << "\t\t\t\t|*                                              *|\n";
@@ -706,6 +716,33 @@ void GraphMat::add_place()
     cin >> place;
     cout << "\t\t\t\t请输入要添加的地点介绍:";
     cin >> message;
+
+    flag = 0;
+    if (mysql_real_query(&mysql, "select * from place_info", (unsigned long)strlen("select * from place_info"))) {  
+        printf("mysql_real_query select failure!\n"); 
+        exit(0);  
+    }
+    res = mysql_store_result(&mysql);
+    if (NULL == res) {  
+        printf("mysql_store_result failure!\n");  
+        exit(0);  
+    }
+    while ((row = mysql_fetch_row(res))) {
+        if ( strcmp(place, row[1]) == 0 ) {
+            flag = 1;
+            break;
+        }
+    }
+    
+    mysql_free_result(res);
+
+    if ( flag == 1 ) {
+        cout << "\n\t\t\t\t该地点已经存在！";
+        cout << "\n\t\t\t\t添加失败按任意键返回...";
+        getchar();
+        getchar();
+        return ;
+    }
 
     for ( int i = 1; i <= MAX_VERTEX_NUM; ++i ) {
         flag = 0;
@@ -750,6 +787,9 @@ void GraphMat::add_route()
     char place1[256];
     char place2[256];
     char dstance[10];
+    MYSQL_RES *res;   
+    MYSQL_ROW row;
+    int flag1, flag2;
 
     cout << "\t\t\t\t|================================================|\n";
     cout << "\t\t\t\t|*                                              *|\n";
@@ -778,6 +818,68 @@ void GraphMat::add_route()
     cout << "\t\t\t\t请输入要添加的路线距离:";
     cin >> dstance;
 
+    flag1 = 0;
+    flag2 = 0;
+    if (mysql_real_query(&mysql, "select * from place_info", (unsigned long)strlen("select * from place_info"))) {  
+        printf("mysql_real_query select failure!\n"); 
+        exit(0);  
+    }
+    res = mysql_store_result(&mysql);
+    if (NULL == res) {  
+        printf("mysql_store_result failure!\n");  
+        exit(0);  
+    }
+    while ((row = mysql_fetch_row(res))) {
+        if ( strcmp(place1, row[0]) == 0 ) {
+            flag1 = 1;
+        }
+        else if ( strcmp(place2, row[0]) == 0 ) {
+            flag2 = 1;
+        }
+    }
+   
+    mysql_free_result(res);
+
+    if ( flag1 == 0 || flag2 == 0 ) {
+        cout << "\n\t\t\t\t添加路线的地点不存在";
+        cout << "\n\t\t\t\t添加失败按任意键返回...";
+        getchar();
+        getchar();
+        return ;
+    }
+
+    flag1 = 0;
+    if (mysql_real_query(&mysql, "select * from route_info", (unsigned long)strlen("select * from route_info"))) {  
+        printf("mysql_real_query select failure!\n"); 
+        exit(0);  
+    }
+    res = mysql_store_result(&mysql);
+    if (NULL == res) {  
+        printf("mysql_store_result failure!\n");  
+        exit(0);  
+    }
+    while ((row = mysql_fetch_row(res))) {
+        if ( strcmp(place1, row[0]) == 0 && strcmp(place2, row[1]) == 0 ) {
+            flag1 = 1;
+            break;
+        }
+        else if ( strcmp(place2, row[0]) == 0 && strcmp(place1, row[1]) == 0 ) {
+            flag1 = 1;
+            break;
+        }
+    }
+ 
+    mysql_free_result(res);
+    
+    if ( flag1 == 1 ) {
+        cout << "\n\t\t\t\t该路线已经存在！";
+        cout << "\n\t\t\t\t添加失败按任意键返回...";
+        getchar();
+        getchar();
+        return ;
+    }
+
+
     char s[256];
     sprintf(s,"insert into route_info values ('%s','%s','%s')", place1, place2, dstance);
 
@@ -795,6 +897,10 @@ void GraphMat::add_route()
 void GraphMat::delete_place()
 {
     char place1[256];
+    int flag;
+    MYSQL_RES *res;   
+    MYSQL_ROW row;
+
 
     cout << "\t\t\t\t|================================================|\n";
     cout << "\t\t\t\t|*                                              *|\n";
@@ -815,8 +921,36 @@ void GraphMat::delete_place()
     }
     cout << "\n\n" << endl;
     
-    cout << "\t\t\t\t请输入要删除的地点名称:";
+    cout << "\t\t\t\t请输入要删除的地点序号:";
     cin >> place1;
+
+    flag = 0;
+    if (mysql_real_query(&mysql, "select * from place_info", (unsigned long)strlen("select * from place_info"))) {  
+        printf("mysql_real_query select failure!\n"); 
+        exit(0);  
+    }
+    res = mysql_store_result(&mysql);
+    if (NULL == res) {  
+        printf("mysql_store_result failure!\n");  
+        exit(0);  
+    }
+    while ((row = mysql_fetch_row(res))) {
+        if ( strcmp(place1, row[0]) == 0 ) {
+            flag = 1;
+            break;
+        }
+    }
+    
+    mysql_free_result(res);
+
+    if ( flag == 0 ) {
+        cout << "\n\t\t\t\t该地点不存在！";
+        cout << "\n\t\t\t\t删除失败按任意键返回...";
+        getchar();
+        getchar();
+        return ;
+    }
+
 
     char s[256];
     sprintf(s,"delete from place_info where number = '%s'", place1);
@@ -825,7 +959,24 @@ void GraphMat::delete_place()
         cout << "mysql_real_query insert failure!\n";
         exit(0);
     }
-    
+
+//删除次地点的相关路线
+//    sprintf(s,"delete from route_info where place_1 = '%s'", place1);
+//
+//    if ( mysql_real_query(&mysql,s,strlen(s)) ) {
+//        cout << "mysql_real_query insert failure!\n";
+//        exit(0);
+//    }
+//
+//    sprintf(s,"delete from route_info where place_2 = '%s'", place1);
+//
+//    if ( mysql_real_query(&mysql,s,strlen(s)) ) {
+//        cout << "mysql_real_query insert failure!\n";
+//        exit(0);
+//    }
+//
+
+
     cout << "\n\t\t\t\t删除成功按任意键返回...";
     getchar();
     getchar();
@@ -837,6 +988,10 @@ void GraphMat::delete_route()
 {
     char place1[256];
     char place2[256];
+    MYSQL_RES *res;   
+    MYSQL_ROW row;
+    int flag1, flag2;
+
 
     cout << "\t\t\t\t|================================================|\n";
     cout << "\t\t\t\t|*                                              *|\n";
@@ -861,6 +1016,69 @@ void GraphMat::delete_route()
     cin >> place1;
     cout << "\t\t\t\t请输入要删除路线的地点序号2:";
     cin >> place2;
+
+    
+    flag1 = 0;
+    flag2 = 0;
+    if (mysql_real_query(&mysql, "select * from place_info", (unsigned long)strlen("select * from place_info"))) {  
+        printf("mysql_real_query select failure!\n"); 
+        exit(0);  
+    }
+    res = mysql_store_result(&mysql);
+    if (NULL == res) {  
+        printf("mysql_store_result failure!\n");  
+        exit(0);  
+    }
+    while ((row = mysql_fetch_row(res))) {
+        if ( strcmp(place1, row[0]) == 0 ) {
+            flag1 = 1;
+        }
+        else if ( strcmp(place2, row[0]) == 0 ) {
+            flag2 = 1;
+        }
+    }
+   
+    mysql_free_result(res);
+
+    if ( flag1 == 0 || flag2 == 0 ) {
+        cout << "\n\t\t\t\t删除路线的地点不存在";
+        cout << "\n\t\t\t\t删除失败按任意键返回...";
+        getchar();
+        getchar();
+        return ;
+    }
+
+    flag1 = 0;
+    if (mysql_real_query(&mysql, "select * from route_info", (unsigned long)strlen("select * from route_info"))) {  
+        printf("mysql_real_query select failure!\n"); 
+        exit(0);  
+    }
+    res = mysql_store_result(&mysql);
+    if (NULL == res) {  
+        printf("mysql_store_result failure!\n");  
+        exit(0);  
+    }
+    while ((row = mysql_fetch_row(res))) {
+        if ( strcmp(place1, row[0]) == 0 && strcmp(place2, row[1]) == 0 ) {
+            flag1 = 1;
+            break;
+        }
+        else if ( strcmp(place2, row[0]) == 0 && strcmp(place1, row[1]) == 0 ) {
+            flag1 = 1;
+            break;
+        }
+    }
+ 
+    mysql_free_result(res);
+    
+    if ( flag1 == 0 ) {
+        cout << "\n\t\t\t\t该路线不存在！";
+        cout << "\n\t\t\t\t删除失败按任意键返回...";
+        getchar();
+        getchar();
+        return ;
+    }
+
 
     char s[256];
     sprintf(s,"delete from route_info where place_1 = '%s' and place_2 = '%s'", place1, place2);
