@@ -1,0 +1,3 @@
+/home/crista/c-/c++-qsj/String/build/CMakeFiles/rebuild_cache.dir
+/home/crista/c-/c++-qsj/String/build/CMakeFiles/test.dir
+/home/crista/c-/c++-qsj/String/build/CMakeFiles/edit_cache.dir

@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/my_string.hpp
+iostream
+-
+cstring
+-
+
+/home/crista/c-/c++-qsj/String/src/test.cpp
+my_string.hpp
+-
+

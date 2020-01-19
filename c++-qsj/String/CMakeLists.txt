@@ -1,0 +1,9 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8) #Cmake最低版本需求，不加入此行会受到警告信息
+
+PROJECT(my_string)  #项目名称
+
+INCLUDE_DIRECTORIES(include)
+
+AUX_SOURCE_DIRECTORY(src SRC_LIST)
+
+ADD_EXECUTABLE(test ${SRC_LIST})
